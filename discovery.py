@@ -55,6 +55,7 @@ class Discovery(object):
 			self.time_end = time.time()
 			# Get the statistics
 			self.device_statistics()
+			self.add_performance()
 
 	def get_next_device(self):
 		# Try to start the ssh session
@@ -145,6 +146,24 @@ class Discovery(object):
 			log.error('{0}:exception:'.format(method_name))
 			log.error('{0}:error: {1}'.format(method_name, str(e)))
 
+	def add_performance(self):
+		# Try to start the ssh session
+		method_name = 'add_performance'
+		log.debug('{0}: starting'.format(method_name))
+
+		try:
+			# Insert the document into the database
+			self.db.insert_single_document(
+				collection_name=
+					self.config['db_config']['collection_performance'],
+				document = self.device_stats)
+			# Log the successfuly output
+			log.debug('{0}:added document: {1}'.format(
+				method_name, self.device_stats))
+		except Exception as e:
+			log.error('{0}:exception:'.format(method_name))
+			log.error('{0}:error: {1}'.format(method_name, str(e)))
+
 
 	def add_remediations(self):
 		# Try to start the ssh session
@@ -184,7 +203,7 @@ class Discovery(object):
 				self.time_add_self_devices)
 			time_total = (self.time_end - 
 				self.time_get_next_device)
-			device_stats = {
+			self.device_stats = {
 			"host_ip": self.current_ip,
 			"total_execution_time": time_total,
 			"get_next_device": time_get_next_device,
@@ -197,7 +216,7 @@ class Discovery(object):
 			"errors": self.error_list,
 			}
 			log.info('{0}:added document: {1}'.format(
-				method_name, device_stats))
+				method_name, self.device_stats))
 		except Exception as e:
 			log.error('{0}:exception:'.format(method_name))
 			log.error('{0}:error: {1}'.format(method_name, str(e)))

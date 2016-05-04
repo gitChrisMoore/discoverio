@@ -31,6 +31,26 @@ Also requires a config.json file to be created in the following fashion:
         "collection_complete": "discovery_complete",
         "collection_inventory": "discovery_inventory",
         "collection_remediation": "discovery_remediation",
+        "collection_list": [{
+            "complete": "discovery_complete"
+        }, {
+            "todo": "discovery_todo"
+        }, {
+            "inventory": "discovery_inventory"
+        }, {
+            "remediation": "discovery_remediation"
+        }, {
+            "performance": "discovery_performance"
+        }],
+        "main": [{
+            "adr": "dbip"
+        }, {
+            "prt": 27017
+        }, {
+            "dbn": "databasename"
+        }, {
+            "msd": 3
+        }],
         "seed_ips": [
             "ip1",
             "ip2",

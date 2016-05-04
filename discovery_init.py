@@ -2,6 +2,7 @@
 import sys
 import helpers.ssh_child
 import helpers.db
+import helpers.db2
 import helpers.load_config
 import logging
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -14,35 +15,27 @@ class DiscoveryInit(object):
 
 	def __init__(self):
 		self.config = helpers.load_config.load_config(self)
-		self.db = helpers.db.DBWrapper(
-			remote_address=self.config['db_config']['remote_address'],
-			remote_port=self.config['db_config']['remote_port'],
-			db_name=self.config['db_config']['db_name'],
-			maxSevSelDelay=self.config['db_config']['maxSevSelDelay'])
+		# Create the DB object
+		self.db = helpers.db2.DBWrapper()
+		self.db.start_conn()
 
 
 	def main(self):
 		method_name = 'main'
 		log.debug('{0}: starting'.format(method_name))
 
-		print self.config['db_config']['collection_todo']
 		# Delete all existing devices in the collections
-		result = self.db.delete_single_collection(
-			collection_name=self.config['db_config']['collection_todo'])
-		log.debug('{0}: result: {1}'.format(method_name, result))
-		result = self.db.delete_single_collection(
-			collection_name=self.config['db_config']['collection_complete'])
-		log.debug('{0}: result: {1}'.format(method_name, result))
-		result = self.db.delete_single_collection(
-			collection_name=self.config['db_config']['collection_inventory'])
-		log.debug('{0}: result: {1}'.format(method_name, result))
-
+		for d in self.db.cfg['collection_list']:
+			for k,v in d.iteritems():
+				result = self.db.delete_single_collection(collection_name=v)
+		
+		
 		# Add seed devices to the collection
 		for device in self.config['db_config']['seed_ips']:
 			result = self.db.add_ip_if_not_exist(
 				ip=device,
-				first_collection=self.config['db_config']['collection_complete'],
-				second_collection=self.config['db_config']['collection_todo'])
+				first_collection=self.db.cfg['complete'],
+				second_collection=self.db.cfg['todo'])
 			log.debug('{0}: result: {1}'.format(method_name, result))
 
 
