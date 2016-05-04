@@ -9,7 +9,6 @@ def main(self):
 	return
 
 def audit(self):
-
 	match = re.findall(r"snmp-server community (.+?)(\n|,)", self.command_result)
 	if len(match) > 1:
 		self.snmp_audit = True

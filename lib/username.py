@@ -9,13 +9,8 @@ def main(self):
 	return
 
 def audit(self):
+	pass
 
-	match = re.findall(r"username (.+?)(\n|,)", self.command_result)
-	if len(match) == 1:
-		self.username_audit = True
-	else:
-		raise Exception(self.command_result)
-	return
 
 def command(self):
 	self.command = ('show run | i usern\n')
