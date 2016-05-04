@@ -13,7 +13,6 @@ def main(self):
 	get_list_of_functions(self)
 	for module in self.list_of_functions:
 		try:
-			start_time = time.time()
 			module['function_name'].main(self)
 		except Exception as e:
 			logging.debug("Failed on module: " + module['error_function_name'])

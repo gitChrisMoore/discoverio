@@ -5,6 +5,7 @@ import helpers.ssh_child
 import helpers.db
 import lib.lib_loop
 import os
+import time
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -31,19 +32,29 @@ class Discovery(object):
 		while self.db.count_collection(
 			collection=self.config['db_config']['collection_todo']) > 0:
 			# Get the next IP address
+			self.time_get_next_device = time.time()
 			self.get_next_device()
 			# Build an SSH session to the next device in thelist
+			self.time_start_ssh_session = time.time()
 			self.start_ssh_session()
 			# Start the loop through all of the library
+			self.time_loop_through_lib = time.time()
 			self.loop_through_lib()
 			# Add all of the errors to remediation database
+			self.time_add_remediations = time.time()
 			self.add_remediations()
 			# Add the information to the inventory
+			self.time_add_inventory = time.time()
 			self.add_inventory()
 			# Add the addresses to the list of devices to scan
+			self.time_add_todo_devices = time.time()
 			self.add_todo_devices()
 			# Add the list of devices which are found on the device
+			self.time_add_self_devices = time.time()
 			self.add_self_devices()
+			self.time_end = time.time()
+			# Get the statistics
+			self.device_statistics()
 
 	def get_next_device(self):
 		# Try to start the ssh session
@@ -120,10 +131,6 @@ class Discovery(object):
 			# Set the new inventory object
 			new_inventory = {"host_ip": self.current_ip,
 				"inventory": self.inventory,
-				"interfaces": self.interfaces,
-				"bgp_neighbors": self.bgp_neighbors,
-				"cdp_info": self.cdp_info,
-				"eigrp_info": self.eigrp_info,
 				}
 
 			# Insert the document into the database
@@ -156,6 +163,44 @@ class Discovery(object):
 				except Exception as e:
 					log.error('{0}:exception:'.format(method_name))
 					log.error('{0}:error: {1}'.format(method_name, str(e)))
+	def device_statistics(self):
+		# Try to start the ssh session
+		method_name = 'device_statistics'
+		log.debug('{0}: starting'.format(method_name))
+		try:
+			time_get_next_device = (self.time_start_ssh_session - 
+				self.time_get_next_device)
+			time_start_ssh_session = (self.time_loop_through_lib - 
+				self.time_start_ssh_session)
+			time_loop_through_lib = (self.time_add_remediations - 
+				self.time_loop_through_lib)
+			time_add_remediations = (self.time_add_inventory - 
+				self.time_add_remediations)
+			time_add_inventory = (self.time_add_todo_devices - 
+				self.time_add_inventory)
+			time_add_todo_devices = (self.time_add_self_devices - 
+				self.time_add_todo_devices)
+			time_add_self_devices = (self.time_end - 
+				self.time_add_self_devices)
+			time_total = (self.time_end - 
+				self.time_get_next_device)
+			device_stats = {
+			"host_ip": self.current_ip,
+			"total_execution_time": time_total,
+			"get_next_device": time_get_next_device,
+			"start_ssh_session": time_start_ssh_session,
+			"loop_through_lib": time_loop_through_lib,
+			"add_remediations": time_add_remediations,
+			"add_inventory": time_add_inventory,
+			"add_todo_devices": time_add_todo_devices,
+			"time_add_self_devices": time_add_self_devices,
+			"errors": self.error_list,
+			}
+			log.info('{0}:added document: {1}'.format(
+				method_name, device_stats))
+		except Exception as e:
+			log.error('{0}:exception:'.format(method_name))
+			log.error('{0}:error: {1}'.format(method_name, str(e)))
 
 	def start_ssh_session(self):
 		# Try to start the ssh session
