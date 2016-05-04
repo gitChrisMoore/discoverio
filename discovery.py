@@ -3,6 +3,7 @@ import sys
 import helpers.load_config
 import helpers.ssh_child
 import helpers.db
+import helpers.db2
 import lib.lib_loop
 import os
 import time
@@ -18,11 +19,9 @@ class Discovery(object):
 	def __init__(self):
 		self.config = helpers.load_config.load_config(self)
 		# Create the DB object
-		self.db = helpers.db.DBWrapper(
-			remote_address=self.config['db_config']['remote_address'],
-			remote_port=self.config['db_config']['remote_port'],
-			db_name=self.config['db_config']['db_name'],
-			maxSevSelDelay=self.config['db_config']['maxSevSelDelay'],)
+		self.db = helpers.db2.DBWrapper()
+		self.db.start_conn()
+
 
 	def main(self):
 		method_name = 'main'
@@ -33,7 +32,7 @@ class Discovery(object):
 			collection=self.config['db_config']['collection_todo']) > 0:
 			# Get the next IP address
 			self.time_get_next_device = time.time()
-			self.get_next_device()
+			self.current_ip = self.db.find_next_todo()
 			# Build an SSH session to the next device in thelist
 			self.time_start_ssh_session = time.time()
 			self.start_ssh_session()
@@ -56,21 +55,6 @@ class Discovery(object):
 			# Get the statistics
 			self.device_statistics()
 			self.add_performance()
-
-	def get_next_device(self):
-		# Try to start the ssh session
-		method_name = 'get_next_device'
-		log.debug('{0}: starting'.format(method_name))
-		try:
-			document = self.db.find_one_and_delete(
-				collection=self.config['db_config']['collection_todo'])
-			self.current_ip = document['ip_address']
-			log.debug('{0}:added document: {1}'.format(
-				method_name, document))
-		except Exception as e:
-			log.error('{0}:exception:'.format(method_name))
-			log.error('{0}:error: {1}'.format(method_name, str(e)))
-
 
 	def loop_through_lib(self):
 		# Try to start the ssh session

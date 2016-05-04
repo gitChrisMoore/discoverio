@@ -99,6 +99,17 @@ class DBWrapper(object):
 			log.error('{0}:exception:'.format(method_name))
 			log.error('{0}:error: {1}'.format(method_name, e))
 
+	def find_next_todo(self):
+		method_name = 'find_next_todo'
+		log.debug('{0}:start:'.format(method_name))	
+		try:
+			document = self.db[self.cfg['todo']].find_one({})
+			self.db[self.cfg['todo']].remove(document)
+			return document['ip_address']
+		except Exception as e:
+			log.error('{0}:exception:'.format(method_name))
+			log.error('{0}:error: {1}'.format(method_name, str(e)))
+
 	def find_all(self, collection):
 		method_name = 'find_one_and_delete'
 		log.debug('{0}:start:'.format(method_name))	
