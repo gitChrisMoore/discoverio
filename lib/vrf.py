@@ -3,8 +3,9 @@ import re
 def main(self):
 
 	command(self)
-	self.command_result = self.ssh_session.send_commandself.ssh_session.child_execute
-	return
+	self.command_result = self.ssh_session.child_execute(command=self.command)
+	audit(self)
+	set_properties(self)
 
 def audit(self):
 	pass
@@ -29,6 +30,7 @@ def set_properties(self,regex_value="default"):
 	split_by_lines.pop()
 	split_by_lines.pop(0)
 	split_by_lines.pop(0)
+	print split_by_lines
 	for line in split_by_lines:
 		split_by_space = line.split()
 		if re.search('^\s*[0-9]', split_by_space[1]):

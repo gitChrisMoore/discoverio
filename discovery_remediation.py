@@ -7,8 +7,8 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 log = logging.getLogger(__name__)
 
 class DiscoveryMon(object):
-	""" This loops through the available collections from the configuraiton
-		file and every 10 seconds does a count on the configured collections
+	""" This provides a wrapper around the MongoClient package, and also 
+	allows for some default values to be added.
 	"""
 
 	def __init__(self):
@@ -17,19 +17,15 @@ class DiscoveryMon(object):
 		self.db = helpers.db2.DBWrapper()
 		self.db.start_conn()
 
-
 	def main(self):
-		method_name = 'main'
 		while True:
-			result_array = []
-			for d in self.db.cfg['collection_list']:
-				for k,v in d.iteritems():
-					result = self.db.count_collection(collection=v)
-					tmp_obj = {v : result}
-					result_array.append(tmp_obj)
-			log.info('\n\nresult:collection_todo: \n{0}'.format(
-				result_array))
-			time.sleep(10)
+			result_inventory_collection = self.db.find_all(
+				collection=self.config['db_config']['collection_remediation'])
+			for document in result_inventory_collection:
+				log.debug('\n\nresult:find_all: \n{0}'.format(
+					document))
+				print document
+			time.sleep(60)
 
 # ================================================================
 # MAIN

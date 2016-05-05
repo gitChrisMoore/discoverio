@@ -6,9 +6,7 @@ def main(self):
 	command(self)
 	self.command_result = self.ssh_session.child_execute(command=self.command)
 	set_properties(self)
-	if self.vrf is None :
-		return
-	else:
+	if self.vrf:
 		for vrf in self.vrf:
 			#print vrf
 			command_vrf(self=self,vrf_name=vrf['vrf_name'])
