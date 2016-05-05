@@ -19,9 +19,6 @@ def main(self):
 			logging.error(str(e))
 			add_error_range(self,module_name=str(module['function_name']),
 				error_string=str(e))
-	if self.device_type is None:
-		add_error_range(self,module_name='find_device_type',
-			error_string=str(self.inventory))
 
 def get_list_of_functions(self):
 	self.list_of_functions = mapping.return_list_of_functions(self)

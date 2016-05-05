@@ -20,10 +20,13 @@ class DiscoveryMon(object):
 	def main(self):
 		while True:
 			result_inventory_collection = self.db.find_all(
-				collection=self.config['db_config']['collection_inventory'])
+				collection=self.config['db_config']['collection_remediation'])
 			for document in result_inventory_collection:
 				log.debug('\n\nresult:find_all: \n{0}'.format(
 					document))
+				with open('tmp_output.txt', 'a') as the_file:
+					the_file.write(str(document))
+					the_file.write('\n')
 				print document
 			time.sleep(60)
 

@@ -54,6 +54,7 @@ class Discovery(object):
 			self.time_end = time.time()
 			# Get the statistics
 			self.device_statistics()
+			self.validate_identity()
 			self.add_performance()
 
 	def loop_through_lib(self):
@@ -66,6 +67,27 @@ class Discovery(object):
 		self.ipaddress_self = []
 		try:
 			lib.lib_loop.main(self)
+			log.debug('{0}:success: loop complete'.format(method_name))
+		except Exception as e:
+			log.error('{0}:exception:'.format(method_name))
+			log.error('{0}:error: {1}'.format(method_name, str(e)))
+
+	def validate_identity(self):
+		# Try to start the ssh session
+		method_name = 'validate_identity'
+		log.debug('{0}: starting'.format(method_name))
+		self.inventory = {}
+		self.error_list = []
+		self.ipaddress_neighbor = []
+		self.ipaddress_self = []
+		try:
+			if self.device_type is None:
+				self.db.insert_single_document(
+					collection_name=
+						self.db.cfg['unknown'],
+					document = self.new_inventory)
+				log.debug('{0}:added document: {1}'.format(
+					method_name, item))
 			log.debug('{0}:success: loop complete'.format(method_name))
 		except Exception as e:
 			log.error('{0}:exception:'.format(method_name))
@@ -114,7 +136,7 @@ class Discovery(object):
 
 		try:
 			# Set the new inventory object
-			new_inventory = {"host_ip": self.current_ip,
+			self.new_inventory = {"host_ip": self.current_ip,
 				"inventory": self.inventory,
 				}
 
@@ -122,10 +144,10 @@ class Discovery(object):
 			self.db.insert_single_document(
 				collection_name=
 					self.config['db_config']['collection_inventory'],
-				document = new_inventory)
+				document = self.new_inventory)
 			# Log the successfuly output
 			log.debug('{0}:added document: {1}'.format(
-				method_name, new_inventory))
+				method_name, self.new_inventory))
 		except Exception as e:
 			log.error('{0}:exception:'.format(method_name))
 			log.error('{0}:error: {1}'.format(method_name, str(e)))

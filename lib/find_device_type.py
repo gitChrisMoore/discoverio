@@ -15,8 +15,34 @@ def set_device_type(self):
 	{"PID": "ISR4331/K9", "device_type": "IOS-XE"},
 	{"PID": "ASR1000-ESP5", "device_type": "IOS-XE"},
 	{"PID": "WS-X4515", "device_type": "IOS"},
-	{"PID": "WS-C3650-48PS", "device_type": "IOS"},		
+	{"PID": "WS-C3650-48PS", "device_type": "IOS"},
+	{"PID": "WS-C3650-48PD", "device_type": "IOS"},
+	{"PID": "WS-X45-SUP6-E", "device_type": "IOS"},
+	{"PID": "WS-X45-SUP8-E", "device_type": "IOS"},
+	{"PID": "N7K-C7004", "device_type": "IOS-XE"},
+	{"PID": "WS-C6K-VTT-E", "device_type": "IOS-XE"},
+	{"PID": "WS-C3750X-24S-E", "device_type": "IOS"},
+	{"PID": "WS-C3550-48-SMI", "device_type": "IOS"},
+	{"PID": "WS-C3560G-24TS-S", "device_type": "IOS"},
+	{"PID": "WS-C3750-48PS-E", "device_type": "IOS"},
+	{"PID": "WS-C3560V2-48PS-S", "device_type": "IOS"},
+	{"PID": "WS-C3750-48PS-E", "device_type": "IOS"},
+	{"PID": "WS-C3650-48TD", "device_type": "IOS"},
+	{"PID": "WS-C3750E-48TD-S", "device_type": "IOS"},
+	{"PID": "WS-C3750X-48PF-S", "device_type": "IOS"},
+	{"PID": "WS-C3750E-24TD-E", "device_type": "IOS"},
+	{"PID": "WS-C3750G-12S-S", "device_type": "IOS"},
+	{"PID": "WS-SUP720-3B", "device_type": "IOS"},
+	{"PID": "WS-X45-SUP7-E", "device_type": "IOS"},
+	{"PID": "WS-C3560V2-24PS-S", "device_type": "IOS"},
+	{"PID": "WS-C3750X-48P-S", "device_type": "IOS"},
+	{"PID": "WS-X45-SUP6L-E", "device_type": "IOS"},
+	{"PID": "WS-C3750G-24PS-S", "device_type": "IOS"},
+	{"PID": "WS-SUP720-3B", "device_type": "IOS"},
+	{"PID": "CISCO2851", "device_type": "IOS"},
 	]
+
+
 	self.device_type = None
 	for i in self.inventory:
 		for j in known_devices:
