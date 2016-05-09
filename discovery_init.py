@@ -2,7 +2,7 @@
 import sys
 import helpers.ssh_child
 import helpers.db
-import helpers.db2
+import helpers.db
 import helpers.load_config
 import logging
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -16,7 +16,7 @@ class DiscoveryInit(object):
 	def __init__(self):
 		self.config = helpers.load_config.load_config(self)
 		# Create the DB object
-		self.db = helpers.db2.DBWrapper()
+		self.db = helpers.db.DBWrapper()
 		self.db.start_conn()
 
 
@@ -29,6 +29,7 @@ class DiscoveryInit(object):
 			for k,v in d.iteritems():
 				result = self.db.delete_single_collection(collection_name=v)
 		
+
 		
 		# Add seed devices to the collection
 		for device in self.config['db_config']['seed_ips']:
@@ -38,6 +39,9 @@ class DiscoveryInit(object):
 				second_collection=self.db.cfg['todo'])
 			log.debug('{0}: result: {1}'.format(method_name, result))
 
+		# Set the unique value for the ip_address field
+		print self.db.set_unqiue_index(field="ip_address", collection_name= self.db.cfg['todo'])
+		print self.db.set_unqiue_index(field="ip_address", collection_name= self.db.cfg['complete'])
 
 # ================================================================
 # MAIN

@@ -20,7 +20,7 @@ class DiscoveryMon(object):
 	def main(self):
 		while True:
 			result_inventory_collection = self.db.find_all(
-				collection=self.config['db_config']['collection_remediation'])
+				collection=self.config['db_config']['collection_inventory'])
 			for document in result_inventory_collection:
 				log.debug('\n\nresult:find_all: \n{0}'.format(
 					document))

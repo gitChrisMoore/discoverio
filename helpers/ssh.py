@@ -34,7 +34,7 @@ class SSHBase(object):
 			paramiko.AutoAddPolicy())
 		try:
 			ssh_transport.connect(hostname=self.host, 
-				port=self.port, password=self.pw, username=self.un)
+				port=self.port, password=self.pw, username=self.un, timeout=3)
 			log.debug('{0}:success: {1} {2} {3}'.format(
 				method_name,self.host, self.port, self.un))
 			log.debug('{0}:result: {1})'.format(method_name,ssh_transport))

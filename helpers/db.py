@@ -1,8 +1,8 @@
 from pymongo import MongoClient
 import sys
-
+import load_config
 import logging
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 log = logging.getLogger(__name__)
 
 class DBWrapper(object):
@@ -11,19 +11,28 @@ class DBWrapper(object):
 
 	"""
 
-	def __init__(self,remote_address,
-				remote_port,db_name,maxSevSelDelay):
-		self.remote_address = remote_address
-		self.remote_port = remote_port
-		self.maxSevSelDelay = maxSevSelDelay
-		self.db_name  = db_name
-		self.client = MongoClient(self.remote_address, self.remote_port,
-								serverSelectionTimeoutMS=self.maxSevSelDelay)
-		self.db = self.client[db_name]
+	def __init__(self):
+		pass
 
 	def main(self):
 		method_name = 'main'
 		log.debug('{0}: starting'.format(method_name))
+
+	def start_conn(self):
+		config = load_config.load_config(self)
+		# Create the DB object
+		self.cfg = {}
+		self.cfg['collection_list'] = config['db_config']['collection_list']
+		for d in config['db_config']['main']:
+			for k,v in d.iteritems():
+				self.cfg[k] = v
+		for d in config['db_config']['collection_list']:
+			for k,v in d.iteritems():
+				self.cfg[k] = v
+		self.client = MongoClient(self.cfg['adr'], self.cfg['prt'],
+			serverSelectionTimeoutMS=self.cfg['msd'])
+		db_name = self.cfg['dbn']
+		self.db = self.client[db_name]
 
 	def validate_conn(self):
 		method_name = 'connect_to_db'
@@ -42,6 +51,20 @@ class DBWrapper(object):
 				method_name,self.remote_address, 
 				self.remote_port, self.db_name))
 			log.error('{0}:error: {1}'.format(method_name, e))
+
+	def set_unqiue_index(self, field, collection_name):
+		method_name = 'set_unqiue_index'
+		log.debug('{0}:start:'.format(method_name))
+		try:
+			print 'field'
+			print field
+			print collection_name
+			result = self.db[collection_name].create_index(field, unique = True)
+			log.debug('{0}:success: unique collection: {1}'.format(
+				method_name,result))
+		except Exception as e:
+			log.error('{0}:exception:'.format(method_name))
+			log.error('{0}:error: {1}'.format(method_name, e))	
 
 	def transform_ip_to_dict(self,ip):
 		method_name = 'transform_ip_to_dict'
@@ -74,10 +97,13 @@ class DBWrapper(object):
 		try:
 			document = self.transform_ip_to_dict(ip=ip)
 			result = self.db[collection].insert(document)
+			print'hi'
+			print result
 			log.debug('{0}:success: {1}'.format(method_name, result))
 		except Exception as e:
 			log.error('{0}:exception:'.format(method_name))
-			log.error('{0}:error: {1}'.format(method_name, e))
+			log.error('{0}:error: {1}'.format(method_name, str(e)))
+			print str(e)
 
 	def find_one_and_delete(self, collection):
 		method_name = 'find_one_and_delete'
@@ -89,6 +115,17 @@ class DBWrapper(object):
 		except Exception as e:
 			log.error('{0}:exception:'.format(method_name))
 			log.error('{0}:error: {1}'.format(method_name, e))
+
+	def find_next_todo(self):
+		method_name = 'find_next_todo'
+		log.debug('{0}:start:'.format(method_name))	
+		try:
+			document = self.db[self.cfg['todo']].find_one({})
+			self.db[self.cfg['todo']].remove(document)
+			return document['ip_address']
+		except Exception as e:
+			log.error('{0}:exception:'.format(method_name))
+			log.error('{0}:error: {1}'.format(method_name, str(e)))
 
 	def find_all(self, collection):
 		method_name = 'find_one_and_delete'
@@ -135,7 +172,7 @@ class DBWrapper(object):
 		method_name = 'delete_single_collection'
 		log.debug('{0}:start:'.format(method_name))
 		try:
-			result = self.db[collection_name].delete_many({})
+			result = self.db[collection_name].drop()
 			log.debug('{0}:success: deleted collection: {1}'.format(
 				method_name,result))
 		except Exception as e:

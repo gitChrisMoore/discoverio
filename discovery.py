@@ -3,15 +3,16 @@ import sys
 import helpers.load_config
 import helpers.ssh_child
 import helpers.db
-import helpers.db2
-import lib.lib_loop
 import os
 import time
+import lib.mapping
+import lib.show_ip_route
+import lib.show_ip_vrf
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 log = logging.getLogger(__name__)
 
-class Discovery(object):
+class BuildContainers(object):
 	""" This provides a wrapper around the MongoClient package, and also 
 	allows for some default values to be added.
 	"""
@@ -19,121 +20,64 @@ class Discovery(object):
 	def __init__(self):
 		self.config = helpers.load_config.load_config(self)
 		# Create the DB object
-		self.db = helpers.db2.DBWrapper()
+		self.db = helpers.db.DBWrapper()
 		self.db.start_conn()
-
+		self.director = lib.snmpv2.Director()
+		self.stats = {}
+		self.vrf = ['default']
+		self.ip_discovered_list = []
+		self.ip_owned_list = []
 
 	def main(self):
-		method_name = 'main'
-		log.debug('{0}: starting'.format(method_name))
-
-		# Count the number of documents which are left in the collection
+		# standard start config: start
+		self.abs_start(method_name = 'main')
+		# standard start config: end
 		while self.db.count_collection(
 			collection=self.config['db_config']['collection_todo']) > 0:
-			# Get the next IP address
-			self.time_get_next_device = time.time()
-			self.current_ip = self.db.find_next_todo()
-			# Build an SSH session to the next device in thelist
-			self.time_start_ssh_session = time.time()
+			next_device = self.db.find_one_and_delete(collection=self.db.cfg['todo'])
+			self.current_ip = next_device['ip_address']
+
 			self.start_ssh_session()
-			# Start the loop through all of the library
-			self.time_loop_through_lib = time.time()
-			self.loop_through_lib()
-			# Add all of the errors to remediation database
-			self.time_add_remediations = time.time()
-			self.add_remediations()
-			# Add the information to the inventory
-			self.time_add_inventory = time.time()
-			self.add_inventory()
-			# Add the addresses to the list of devices to scan
-			self.time_add_todo_devices = time.time()
-			self.add_todo_devices()
-			# Add the list of devices which are found on the device
-			self.time_add_self_devices = time.time()
-			self.add_self_devices()
-			self.time_end = time.time()
-			# Get the statistics
-			self.device_statistics()
-			self.validate_identity()
-			self.add_performance()
 
-	def loop_through_lib(self):
-		# Try to start the ssh session
-		method_name = 'loop_through_lib'
-		log.debug('{0}: starting'.format(method_name))
-		self.inventory = {}
-		self.error_list = []
-		self.ipaddress_neighbor = []
-		self.ipaddress_self = []
-		try:
-			lib.lib_loop.main(self)
-			log.debug('{0}:success: loop complete'.format(method_name))
-		except Exception as e:
-			log.error('{0}:exception:'.format(method_name))
-			log.error('{0}:error: {1}'.format(method_name, str(e)))
+			
+			self.get_function_list()
 
-	def validate_identity(self):
-		# Try to start the ssh session
-		method_name = 'validate_identity'
-		log.debug('{0}: starting'.format(method_name))
-		self.inventory = {}
-		self.error_list = []
-		self.ipaddress_neighbor = []
-		self.ipaddress_self = []
-		try:
-			if self.device_type is None:
-				self.db.insert_single_document(
-					collection_name=
-						self.db.cfg['unknown'],
-					document = self.new_inventory)
-				log.debug('{0}:added document: {1}'.format(
-					method_name, item))
-			log.debug('{0}:success: loop complete'.format(method_name))
-		except Exception as e:
-			log.error('{0}:exception:'.format(method_name))
-			log.error('{0}:error: {1}'.format(method_name, str(e)))
+			try:
+				self.check_for_vrf()
+		
 
-	def add_self_devices(self):
-		# Try to start the ssh session
-		method_name = 'add_self_devices'
-		log.debug('{0}: starting'.format(method_name))
+				for vrf in self.vrf:
+					self.loop_show_ip_route(vrf_name=vrf)
 
-		try:
-			if len(self.ipaddress_self) > 0 :
-				for ip_address in self.ipaddress_self:
-					self.db.add_ip_to_collection(ip=ip_address,
-						collection=
-							self.config['db_config']['collection_complete'])
-					log.debug('{0}:added document: {1}'.format(
-						method_name, ip_address))
-		except Exception as e:
-			log.error('{0}:exception:'.format(method_name))
-			log.error('{0}:error: {1}'.format(method_name, str(e)))
+				self.main_loop()	
 
-	def add_todo_devices(self):
-		# Try to start the ssh session
-		method_name = 'add_todo_devices'
-		log.debug('{0}: starting'.format(method_name))
+				# Add Devices to the completed collection
+				for device in self.ip_interface:
+					if device['interface_ip'] == 'unassigned':
+						pass
+					else:
+						self.db.add_ip_to_collection(ip=device['interface_ip'], 
+							collection=self.db.cfg['complete'])
 
-		try:
-			if len(self.ipaddress_neighbor) > 0 :
-				for ip_address in self.ipaddress_neighbor:
-					self.db.add_ip_if_not_exist(ip=ip_address,
-						first_collection=
-							self.config['db_config']['collection_complete'],
-						second_collection=
-							self.config['db_config']['collection_todo'])
-					log.debug('{0}:added document: {1}'.format(
-						method_name, ip_address))
-		except Exception as e:
-			log.error('{0}:exception:'.format(method_name))
-			log.error('{0}:error: {1}'.format(method_name, str(e)))
+				# Add devices to the todo collection
+				for device in self.ip_discovered_list:
+					result = self.db.add_ip_if_not_exist(
+						ip=device,
+						first_collection=self.db.cfg['complete'],
+						second_collection=self.db.cfg['todo'])
+
+				# standard start config: start
+				self.abs_end(method_name='main')
+				# standard start config: end
+				self.add_inventory()
+			except Exception as e:
+				pass	
 
 	def add_inventory(self):
-		# Try to start the ssh session
+		# standard start config: start
 		method_name = 'add_inventory'
-		log.debug('{0}: starting'.format(method_name))
-
+		self.abs_start(method_name = method_name)
+		# standard start config: end
 		try:
 			# Set the new inventory object
 			self.new_inventory = {"host_ip": self.current_ip,
@@ -143,7 +87,7 @@ class Discovery(object):
 			# Insert the document into the database
 			self.db.insert_single_document(
 				collection_name=
-					self.config['db_config']['collection_inventory'],
+					self.db.cfg['inventory'],
 				document = self.new_inventory)
 			# Log the successfuly output
 			log.debug('{0}:added document: {1}'.format(
@@ -152,86 +96,77 @@ class Discovery(object):
 			log.error('{0}:exception:'.format(method_name))
 			log.error('{0}:error: {1}'.format(method_name, str(e)))
 
-	def add_performance(self):
-		# Try to start the ssh session
-		method_name = 'add_performance'
-		log.debug('{0}: starting'.format(method_name))
+	def check_for_vrf(self):
+		# standard start config: start
+		self.abs_start(method_name = 'check_for_vrf')
+		# standard start config: end
 
-		try:
-			# Insert the document into the database
-			self.db.insert_single_document(
-				collection_name=
-					self.config['db_config']['collection_performance'],
-				document = self.device_stats)
-			# Log the successfuly output
-			log.debug('{0}:added document: {1}'.format(
-				method_name, self.device_stats))
-		except Exception as e:
-			log.error('{0}:exception:'.format(method_name))
-			log.error('{0}:error: {1}'.format(method_name, str(e)))
+		self.director.builder = lib.show_ip_vrf.ShowIPVRF()
+		self.director.construct_container()
+		container = self.director.get_container()
+		cmd_output = self.ssh_session.child_execute(command=container.cmd)
+		self.director.container_filter(cmd_output)
+		result = self.director.get_container()
+		if len(result.regex_result) > 0:
+			self.vrf = self.vrf + result.regex_result
 
+		# standard start config: start
+		self.abs_end(method_name='check_for_vrf')
+		# standard start config: end
 
-	def add_remediations(self):
-		# Try to start the ssh session
-		method_name = 'add_remediations'
-		log.debug('{0}: starting'.format(method_name))
+	def loop_show_ip_route(self, vrf_name):
+		# standard start config: start
+		method_name = 'loop_show_ip_route'
+		self.abs_start(method_name = method_name)
+		# standard start config: end
 
-		if len(self.error_list) > 0:
-			for item in self.error_list:
-				try:
-					self.db.insert_single_document(
-						collection_name=
-							self.config['db_config']['collection_remediation'],
-						document = item)
-					log.debug('{0}:added document: {1}'.format(
-						method_name, item))
-				except Exception as e:
-					log.error('{0}:exception:'.format(method_name))
-					log.error('{0}:error: {1}'.format(method_name, str(e)))
-	def device_statistics(self):
-		# Try to start the ssh session
-		method_name = 'device_statistics'
-		log.debug('{0}: starting'.format(method_name))
-		try:
-			time_get_next_device = (self.time_start_ssh_session - 
-				self.time_get_next_device)
-			time_start_ssh_session = (self.time_loop_through_lib - 
-				self.time_start_ssh_session)
-			time_loop_through_lib = (self.time_add_remediations - 
-				self.time_loop_through_lib)
-			time_add_remediations = (self.time_add_inventory - 
-				self.time_add_remediations)
-			time_add_inventory = (self.time_add_todo_devices - 
-				self.time_add_inventory)
-			time_add_todo_devices = (self.time_add_self_devices - 
-				self.time_add_todo_devices)
-			time_add_self_devices = (self.time_end - 
-				self.time_add_self_devices)
-			time_total = (self.time_end - 
-				self.time_get_next_device)
-			self.device_stats = {
-			"host_ip": self.current_ip,
-			"total_execution_time": time_total,
-			"get_next_device": time_get_next_device,
-			"start_ssh_session": time_start_ssh_session,
-			"loop_through_lib": time_loop_through_lib,
-			"add_remediations": time_add_remediations,
-			"add_inventory": time_add_inventory,
-			"add_todo_devices": time_add_todo_devices,
-			"time_add_self_devices": time_add_self_devices,
-			"errors": self.error_list,
-			}
-			log.info('{0}:added document: {1}'.format(
-				method_name, self.device_stats))
-		except Exception as e:
-			log.error('{0}:exception:'.format(method_name))
-			log.error('{0}:error: {1}'.format(method_name, str(e)))
+		self.director.builder = lib.show_ip_route.ShowIPRoute()
+		self.director.construct_container(vrf_name=vrf_name)
+		container = self.director.get_container()
+		cmd_output = self.ssh_session.child_execute(command=container.cmd)
+		self.director.container_filter(cmd_output)
+		result = self.director.get_container()
+		self.ip_discovered_list = self.ip_discovered_list + result.regex_result
+
+		# standard start config: start
+		self.abs_end(method_name='loop_show_ip_route')
+		# standard start config: end		
+
+	def main_loop(self):
+		# standard start config: start
+		method_name = 'main_loop'
+		self.abs_start(method_name = 'main_loop')
+		# standard start config: end
+		for method in self.function_list:
+			# standard start config: start
+			try:
+				self.abs_start(method_name = method['description'])
+				# standard start config: end
+				self.director.builder = method['name']()
+				self.director.construct_container()
+				container = self.director.get_container()
+				cmd_output = self.ssh_session.child_execute(command=container.cmd)
+				self.director.container_filter(cmd_output)
+				result = self.director.get_container()
+				setattr(self, method['description'], result.regex_result)
+				# standard start config: start
+				self.abs_end(method_name = method['description'])
+				# standard start config: end
+			except Exception as e:
+				log.error('{0}:exception:'.format(method['description']))
+				log.error('{0}:error: {1}'.format(method['description'], str(e)))
+				# standard start config: start
+				self.abs_end(method_name= method['description'])
+				# standard start config: end
+		# standard start config: start
+		self.abs_end(method_name='main_loop')
+		# standard start config: end
 
 	def start_ssh_session(self):
-		# Try to start the ssh session
+		# standard start config: start
 		method_name = 'start_ssh_session'
-		log.debug('{0}: starting'.format(method_name))
-
+		self.abs_start(method_name = 'start_ssh_session')
+		# standard start config: end
 		try:
 			self.ssh_session = helpers.ssh_child.SSHChild(
 				host=self.current_ip,
@@ -240,13 +175,34 @@ class Discovery(object):
 				port=self.config['default_info']['port'])
 			log.debug('{0}:success: {1}'.format(
 				method_name, self.ssh_session))
+			# standard start config: start
+			self.abs_end(method_name='start_ssh_session')
+			# standard start config: end
 		except Exception as e:
 			log.error('{0}:exception:'.format(method_name))
 			log.error('{0}:error: {1}'.format(method_name, str(e)))
-
-# ================================================================
-# MAIN
-# ================================================================
-if __name__ == '__main__':
-    tmprun = Discovery()
-    tmprun.main()
+			# standard start config: start
+			self.abs_end(method_name='start_ssh_session')
+			# standard start config: end
+	def get_function_list(self):
+		self.function_list = lib.mapping.return_function_list(self)
+	def get_vrf_function_list(self):
+		self.function_list = lib.mapping.return_vrf_function_list(self)
+	# Start and End Abstract
+	def abs_start(self, method_name):
+		self.set_time(method_name=method_name, action='_start')
+		log.debug('{0}: starting'.format(method_name))
+	def abs_end(self, method_name):
+		self.set_time(method_name=method_name, action='_finish')
+		self.execution_time(method_name=method_name)
+		log.debug('{0}: ending'.format(method_name))
+	# Performance Helper Methods
+	def set_time(self, method_name, action):
+		self.stats[method_name + action] = time.time()
+	def execution_time(self, method_name):
+		self.stats[method_name + '_exec_time'] = (self.stats[method_name + '_finish'] - 
+			self.stats[method_name + '_start'])
+# Client
+if __name__ == "__main__":
+    client = BuildContainers()
+    client.main()
