@@ -22,7 +22,7 @@ class BuildContainers(object):
 		# Create the DB object
 		self.db = helpers.db.DBWrapper()
 		self.db.start_conn()
-		self.director = lib.snmpv2.Director()
+		self.director = lib.cmd_director.Director()
 		self.stats = {}
 		self.vrf = ['default']
 		self.ip_discovered_list = []
@@ -33,9 +33,17 @@ class BuildContainers(object):
 		self.abs_start(method_name = 'main')
 		# standard start config: end
 		while self.db.count_collection(
-			collection=self.config['db_config']['collection_todo']) > 0:
-			next_device = self.db.find_one_and_delete(collection=self.db.cfg['todo'])
-			self.current_ip = next_device['ip_address']
+			collection=self.db.cfg['todo']) > 0:
+			new_device = False
+			while new_device == False:
+				next_device = self.db.find_one_and_delete(collection=self.db.cfg['todo'])
+				self.current_ip = next_device['ip_address']
+				if self.db.ip_in_collection(ip= self.current_ip, collection=self.db.cfg['complete']):
+					new_device = False
+					print 'device already scanned'
+				else:
+					print 'need to scan devie'
+					new_device = True
 
 			self.start_ssh_session()
 

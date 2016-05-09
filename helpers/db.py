@@ -163,7 +163,6 @@ class DBWrapper(object):
 			else:
 				log.debug('{0}:success: does not exist'.format(method_name))
 				return False
-			return document_list
 		except Exception as e:
 			log.error('{0}:exception:'.format(method_name))
 			log.error('{0}:error: {1}'.format(method_name, e))

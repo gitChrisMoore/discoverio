@@ -1,13 +1,13 @@
 import re
 import logging
 import sys
-import snmpv2
+import cmd_director
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 log = logging.getLogger(__name__)
 
 # Example SNMP
-class ShowInventory(snmpv2.Builder):
+class ShowInventory(cmd_director.Builder):
 
 	def get_cmd(self, vrf_name='default'):
 		self.container.cmd = ('show inventory\n')

@@ -54,7 +54,7 @@ class SSHBase(object):
 
 
 	def send_command(self,session,command,timeout=5,bufsize=65536,
-						output_idle_counter_max=10):
+						output_idle_counter_max=3):
 		method_name = 'send_command'
 		log.debug('{0}:starting:'.format(method_name))
 		log.debug('{0}:try:{1} {2} {3}'.format(
