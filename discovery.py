@@ -3,11 +3,13 @@ import sys
 import helpers.load_config
 import helpers.ssh_child
 import helpers.db
+import helpers.db2
 import os
 import time
 import lib.mapping
 import lib.show_ip_route
 import lib.show_ip_vrf
+import helpers.cmn_tool
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 log = logging.getLogger(__name__)
@@ -22,57 +24,41 @@ class BuildContainers(object):
 		# Create the DB object
 		self.db = helpers.db.DBWrapper()
 		self.db.start_conn()
+		self.db2 = helpers.db2.DB()
 		self.director = lib.cmd_director.Director()
 		self.stats = {}
 		self.vrf = ['default']
 		self.ip_discovered_list = []
 		self.ip_owned_list = []
+		self.filtered_owned_ip_list = []
+		self.list_complete = []
+		self.list_todo = []
 
 	def main(self):
 		# standard start config: start
 		self.abs_start(method_name = 'main')
 		# standard start config: end
-		while self.db.count_collection(
-			collection=self.db.cfg['todo']) > 0:
-			new_device = False
-			while new_device == False:
-				next_device = self.db.find_one_and_delete(collection=self.db.cfg['todo'])
-				self.current_ip = next_device['ip_address']
-				if self.db.ip_in_collection(ip= self.current_ip, collection=self.db.cfg['complete']):
-					new_device = False
-					print 'device already scanned'
-				else:
-					print 'need to scan devie'
-					new_device = True
-
-			self.start_ssh_session()
+		while self.db2.todo_count() > 0:
+			self.new_device = self.db2.todo_get_doc()
 
 			
+
 			self.get_function_list()
 
 			try:
+				self.start_ssh_session()
+
 				self.check_for_vrf()
 		
 
 				for vrf in self.vrf:
 					self.loop_show_ip_route(vrf_name=vrf)
 
-				self.main_loop()	
+				self.main_loop()
 
-				# Add Devices to the completed collection
-				for device in self.ip_interface:
-					if device['interface_ip'] == 'unassigned':
-						pass
-					else:
-						self.db.add_ip_to_collection(ip=device['interface_ip'], 
-							collection=self.db.cfg['complete'])
-
-				# Add devices to the todo collection
-				for device in self.ip_discovered_list:
-					result = self.db.add_ip_if_not_exist(
-						ip=device,
-						first_collection=self.db.cfg['complete'],
-						second_collection=self.db.cfg['todo'])
+				self._add_loop_of_lists()
+				self._add_list_to_todo()
+				self._add_list_to_complete()
 
 				# standard start config: start
 				self.abs_end(method_name='main')
@@ -81,6 +67,55 @@ class BuildContainers(object):
 			except Exception as e:
 				pass	
 
+	def _build_todo_obj(self, ip):
+		return {'ip_address': ip}
+
+	def _dict_to_ip_list(self, device_list):
+		print '_add_ip_list'
+		tmp_list = []
+		for ele in device_list:
+			if isinstance(ele,dict):
+				for key, value in ele.iteritems():
+					if helpers.cmn_tool.IP._ip_single(value):
+						tmp_list.append(value)
+		return tmp_list
+
+	def _list_tp_ip(self, device_list):
+		print '_list_tp_ip'
+		tmp_list = []
+		for ele in device_list:
+			if helpers.cmn_tool.IP._ip_single(ele):
+				tmp_list.append(ele)
+		return tmp_list
+
+
+	def _add_loop_of_lists(self):
+		print '_add_loop_of_lists'
+		
+		self.list_complete = []
+		self.list_todo = []
+
+		self.list_complete = self.list_complete + self._dict_to_ip_list(self.ip_interface)
+		#
+		self.list_todo = self.list_todo + self._list_tp_ip(self.ip_discovered_list)
+		self.list_todo = self.list_todo + self._dict_to_ip_list(self.cdp_info)
+
+		self.list_complete = list(set(self.list_complete))
+		self.list_todo = list(set(self.list_todo))
+
+	def _add_list_to_todo(self):
+
+		for item in self.list_todo:
+			document = self._build_todo_obj(item)
+			print self.db2._todo_insert_todo(document)
+
+	def _add_list_to_complete(self):
+
+		for item in self.list_complete:
+			document = self._build_todo_obj(item)
+			print self.db2._todo_insert_complete(document)
+
+
 	def add_inventory(self):
 		# standard start config: start
 		method_name = 'add_inventory'
@@ -88,7 +123,7 @@ class BuildContainers(object):
 		# standard start config: end
 		try:
 			# Set the new inventory object
-			self.new_inventory = {"host_ip": self.current_ip,
+			self.new_inventory = {"host_ip": self.new_device['ip_address'],
 				"inventory": self.inventory,
 				}
 
@@ -163,6 +198,7 @@ class BuildContainers(object):
 			except Exception as e:
 				log.error('{0}:exception:'.format(method['description']))
 				log.error('{0}:error: {1}'.format(method['description'], str(e)))
+				raise
 				# standard start config: start
 				self.abs_end(method_name= method['description'])
 				# standard start config: end
@@ -176,8 +212,11 @@ class BuildContainers(object):
 		self.abs_start(method_name = 'start_ssh_session')
 		# standard start config: end
 		try:
+			document = self._build_todo_obj(self.new_device['ip_address'])
+			result = self.db2._todo_insert_complete(document)
+			log.info('{0}:add doc: {1}'.format(method_name, result))
 			self.ssh_session = helpers.ssh_child.SSHChild(
-				host=self.current_ip,
+				host=self.new_device['ip_address'],
 				un=self.config['default_info']['un'],
 				pw=self.config['default_info']['pw'],
 				port=self.config['default_info']['port'])
@@ -189,6 +228,7 @@ class BuildContainers(object):
 		except Exception as e:
 			log.error('{0}:exception:'.format(method_name))
 			log.error('{0}:error: {1}'.format(method_name, str(e)))
+			raise
 			# standard start config: start
 			self.abs_end(method_name='start_ssh_session')
 			# standard start config: end

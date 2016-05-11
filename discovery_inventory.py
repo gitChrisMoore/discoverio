@@ -1,5 +1,5 @@
 import sys
-import helpers.db2
+import helpers.db
 import helpers.load_config
 import time
 import logging
@@ -14,13 +14,13 @@ class DiscoveryMon(object):
 	def __init__(self):
 		self.config = helpers.load_config.load_config(self)
 		# Create the DB object
-		self.db = helpers.db2.DBWrapper()
+		self.db = helpers.db.DBWrapper()
 		self.db.start_conn()
 
 	def main(self):
 		while True:
 			result_inventory_collection = self.db.find_all(
-				collection=self.config['db_config']['collection_inventory'])
+				collection='discovery_complete')
 			for document in result_inventory_collection:
 				log.debug('\n\nresult:find_all: \n{0}'.format(
 					document))

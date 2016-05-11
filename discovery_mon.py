@@ -1,5 +1,5 @@
 import sys
-import helpers.db2
+import helpers.db
 import helpers.load_config
 import time
 import logging
@@ -14,7 +14,7 @@ class DiscoveryMon(object):
 	def __init__(self):
 		self.config = helpers.load_config.load_config(self)
 		# Create the DB object
-		self.db = helpers.db2.DBWrapper()
+		self.db = helpers.db.DBWrapper()
 		self.db.start_conn()
 
 
@@ -22,6 +22,7 @@ class DiscoveryMon(object):
 		method_name = 'main'
 		while True:
 			result_array = []
+			print self.db.cfg
 			for d in self.db.cfg['collection_list']:
 				for k,v in d.iteritems():
 					result = self.db.count_collection(collection=v)
