@@ -1,5 +1,5 @@
 import sys
-import helpers.db
+import helpers.db2
 import helpers.load_config
 import time
 import logging
@@ -12,24 +12,19 @@ class DiscoveryMon(object):
 	"""
 
 	def __init__(self):
-		self.config = helpers.load_config.load_config(self)
+		self.cfg = helpers.cmn_tool.Config._load_config()
 		# Create the DB object
-		self.db = helpers.db.DBWrapper()
-		self.db.start_conn()
-
+		self.db = helpers.db2.DB()
 
 	def main(self):
-		method_name = 'main'
 		while True:
 			result_array = []
-			print self.db.cfg
-			for d in self.db.cfg['collection_list']:
+			for d in self.cfg['db_config']['collection_list']:
 				for k,v in d.iteritems():
-					result = self.db.count_collection(collection=v)
+					result = self.db.count(col=v)
 					tmp_obj = {v : result}
 					result_array.append(tmp_obj)
-			log.info('\n\nresult:collection_todo: \n{0}'.format(
-				result_array))
+			log.info('\n\nresults: {0}'.format(result_array))
 			time.sleep(10)
 
 # ================================================================

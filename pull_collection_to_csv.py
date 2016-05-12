@@ -1,5 +1,6 @@
 import sys
-import helpers.db
+import helpers.db2
+import helpers.cmn_tool
 import helpers.load_config
 import time
 import logging
@@ -12,23 +13,20 @@ class DiscoveryMon(object):
 	"""
 
 	def __init__(self):
-		self.config = helpers.load_config.load_config(self)
+		self.cfg = helpers.cmn_tool.Config._load_config()
 		# Create the DB object
-		self.db = helpers.db.DBWrapper()
-		self.db.start_conn()
+		self.db = helpers.db2.DB()
 
 	def main(self):
-		while True:
-			result_inventory_collection = self.db.find_all(
-				collection='discovery_complete')
-			for document in result_inventory_collection:
-				log.debug('\n\nresult:find_all: \n{0}'.format(
-					document))
-				with open('tmp_output.txt', 'a') as the_file:
-					the_file.write(str(document))
-					the_file.write('\n')
-				print document
-			time.sleep(60)
+
+		for d in self.cfg['db_config']['collection_list']:
+			for k,v in d.iteritems():
+				result = self.db.find_all(col=v)
+				for i in result:
+					with open('/tmp/' + v + '.txt', 'a') as the_file:
+						the_file.write(str(i))
+						the_file.write('\n')
+
 
 # ================================================================
 # MAIN

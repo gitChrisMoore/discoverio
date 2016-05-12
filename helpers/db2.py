@@ -9,26 +9,30 @@ class DB(object):
 	"""
 	def __init__(self):
 		self.cfg = cmn_tool.Config._load_config()
-		self.client = MongoClient(self.cfg['adr'], self.cfg['prt'],
-			serverSelectionTimeoutMS=self.cfg['msd'])
+		self.client = MongoClient(self.cfg['db_config']['ip'], self.cfg['db_config']['port'],
+			serverSelectionTimeoutMS=self.cfg['db_config']['msd'])
 		self._start_client()
 
 	def _start_client(self):
 		try:
-			self.db = self.client[self.cfg['dbn']]
+			self.db = self.client[self.cfg['db_config']['name']]
 		except Exception as e:
 			return str(e)
 		
 	""" Inital operations to run on the database
 	"""
 
-	def _init_unique_todo(self):
-		return self.db[self.cfg['todo']].create_index(
-			"ip_address", unique = True)
+	def _init_unique_index(self, col, prop):
+		return self.db[col].create_index(prop,unique=True)
 
-	def _init_unique_complete(self):
-		return self.db[self.cfg['complete']].create_index(
-			"ip_address", unique = True)
+	def _init_remove_collection(self, col):
+		return self.db[col].drop()
+
+	def find_all(self, col):
+		return self.db[col].find()
+
+	def count(self, col):
+		return self.db[col].count()
 
 	""" Below are the methods which were developed to compare the 'todo'
 		collection to the 'complete collection'
@@ -82,17 +86,6 @@ if __name__ == '__main__':
     """ IP Address Validation
     """
     test = DB()
-
-    tst_document_list = [{"ip_address": "1.3.4.1"},{"ip_address": "1.3.3.1"},{"ip_address": "3.4.3.1"}]
-
-    for document in tst_document_list:
-    	print test._todo_insert_complete(document)
-
-    print test.todo_count()
-
-    while test.todo_count() > 0:
-    	new_device = test.todo_get_doc()
-    	print next_ip
 
 
 
