@@ -23,14 +23,10 @@ Also requires a config.json file to be created in the following fashion:
 ```
 {
     "db_config": {
-        "remote_address": "dbip",
-        "remote_port": 27017,
-        "db_name": "databasename",
-        "maxSevSelDelay": 3,
-        "collection_todo": "discovery_todo",
-        "collection_complete": "discovery_complete",
-        "collection_inventory": "discovery_inventory",
-        "collection_remediation": "discovery_remediation",
+        "ip": "ip",
+        "port": port,
+        "name": "db",
+        "msd": 3,
         "collection_list": [{
             "complete": "discovery_complete"
         }, {
@@ -40,26 +36,23 @@ Also requires a config.json file to be created in the following fashion:
         }, {
             "remediation": "discovery_remediation"
         }, {
+            "unknown": "discovery_unknown"
+        }, {
+            "cdp": "discovery_cdp"
+        }, {
+            "known": "discovery_known"
+        }, {
             "performance": "discovery_performance"
         }],
-        "main": [{
-            "adr": "dbip"
-        }, {
-            "prt": 27017
-        }, {
-            "dbn": "databasename"
-        }, {
-            "msd": 3
-        }],
         "seed_ips": [
-            "ip1",
-            "ip2",
-            "ip3"
+            "a",
+            "b",
+            "c"
         ]
     },
     "default_info": {
-        "un": "username",
-        "pw": "password",
+        "un": "un",
+        "pw": "pw",
         "port": 22
     }
 }
