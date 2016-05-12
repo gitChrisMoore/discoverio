@@ -21,9 +21,10 @@ class BuildContainers(object):
 
 	def __init__(self):
 		self.config = helpers.load_config.load_config(self)
+		self.cfg = helpers.cmn_tool.Config._load_config()
 		# Create the DB object
-		self.db = helpers.db.DBWrapper()
-		self.db.start_conn()
+		#self.db = helpers.db.DBWrapper()
+		#self.db.start_conn()
 		self.db2 = helpers.db2.DB()
 		self.director = lib.cmd_director.Director()
 		self.stats = {}
@@ -56,15 +57,17 @@ class BuildContainers(object):
 
 				self.main_loop()
 
+				self._add_list_to_cdp()
 				self._add_loop_of_lists()
 				self._add_list_to_todo()
 				self._add_list_to_complete()
 				# standard start config: start
 				self.abs_end(method_name='main')
 				# standard start config: end
-				self.add_inventory()
+				self._add_inventory()
 			except Exception as e:
-				pass	
+				print str(e)
+				log.error('error: {0}'.format(str(e)))
 
 	def _build_todo_obj(self, ip):
 		return {'ip_address': ip}
@@ -104,7 +107,7 @@ class BuildContainers(object):
 		self.list_todo = list(set(self.list_todo))
 
 	def _add_list_to_todo(self):
-
+		print '_add_list_to_todo'
 		for item in self.list_todo:
 			document = self._build_todo_obj(item)
 			result = self.db2._todo_insert_todo(document)
@@ -112,12 +115,27 @@ class BuildContainers(object):
 
 
 	def _add_list_to_complete(self):
-
+		print '_add_list_to_complete'
 		for item in self.list_complete:
 			document = self._build_todo_obj(item)
 			result = self.db2._todo_insert_complete(document)
 			log.info('_add_list_to_todo:added: {0}'.format(result))
 
+	def _add_list_to_cdp(self):
+		print '_add_list_to_cdp'
+		try: 
+			for item in self.cdp_info:
+				result = self.db2.add_document(col=self.cfg['cdp'], doc=item)
+				log.info('_add_list_to_cdp:added: {0}'.format(result))
+		except Exception as e:
+			print str(e)
+
+	def _add_inventory(self):
+		print '_add_inventory'
+		self.new_inventory = {"host_ip": self.new_device['ip_address'],
+			"inventory": self.inventory}
+		result = self.db2.add_document(col=self.cfg['inventory'], doc=self.new_inventory)
+		log.info('_add_list_to_cdp:added: {0}'.format(result))
 
 	def add_inventory(self):
 		# standard start config: start

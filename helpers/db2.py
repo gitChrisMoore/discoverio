@@ -34,6 +34,12 @@ class DB(object):
 	def count(self, col):
 		return self.db[col].count()
 
+	def add_document(self, col, doc):
+		try:
+			return self.db[col].insert(doc)
+		except Exception as e:
+			return str(e)
+
 	""" Below are the methods which were developed to compare the 'todo'
 		collection to the 'complete collection'
 	"""
