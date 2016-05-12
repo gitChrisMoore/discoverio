@@ -34,13 +34,23 @@ class DB(object):
 	def count(self, col):
 		return self.db[col].count()
 
-	def upsert(self, col, doc):
+	def upsert_arp(self, col, doc):
 		try:
-			key = {'neighbor_ip':doc['ip_address']}
-			data = {'mac_address':doc['mac_address']};
-			print self.db[col].update(key, data, {upsert:true})
+			self.db[col].update_one({'ip_address':doc['ip_address']},
+			 {'$set':{'mac_address':doc['mac_address']}}, upsert=True)
 		except Exception as e:
-			return str(e)
+			print str(e)
+
+	def upsert_cdp(self, col, doc):
+		try:
+			data = {'neighbor_platform':doc['neighbor_platform'],
+			 'neighbor_capabilities':doc['neighbor_capabilities'],
+			 'neighbor_local_port':doc['neighbor_local_port'],
+			 'neighbor_remote_port':doc['neighbor_remote_port']}
+			self.db[col].update_one({'ip_address':doc['ip_address']},
+			 {'$set': data}, upsert=True)
+		except Exception as e:
+			print str(e)
 
 	def add_document(self, col, doc):
 		try:

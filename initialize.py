@@ -35,7 +35,7 @@ class DiscoveryInit(object):
 		log.info(result)
 		result = self.db._init_unique_index(col=self.cfg['complete'], prop='ip_address')
 		log.info(result)
-		result = self.db._init_unique_index(col=self.cfg['cdp'], prop='neighbor_ip')
+		result = self.db._init_unique_index(col=self.cfg['cdp'], prop='ip_address')
 		log.info(result)
 
 	def _seed_collecctions(self):

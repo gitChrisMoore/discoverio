@@ -51,12 +51,12 @@ class BuildContainers(object):
 					self.loop_show_ip_route(vrf_name=vrf)
 
 				self.main_loop()
-				self._add_arp()
+
 				self._add_list_to_cdp()
 				self._add_loop_of_lists()
 				self._add_list_to_todo()
 				self._add_list_to_complete()
-
+				self._add_arp()
 				# standard start config: start
 				self.abs_end(method_name='main')
 				# standard start config: end
@@ -118,9 +118,9 @@ class BuildContainers(object):
 		log.debug('starting: _add_list_to_cdp')
 		try: 
 			for item in self.cdp_info:
-				self.db2.add_document(col=self.cfg['cdp'], doc=item)
+				self.db2.upsert_cdp(col=self.cfg['cdp'], doc=item)
 		except Exception as e:
-			print str(e)
+			log.error('error: {0}'.format(str(e)))
 
 	def _add_inventory(self):
 		log.debug('starting: _add_inventory')
@@ -132,9 +132,9 @@ class BuildContainers(object):
 		log.debug('starting: _add_arp')
 		try:
 			for item in self.arp_info:
-				self.db2.upsert(col=self.cfg['cdp'], doc=item)
+				self.db2.upsert_arp(col=self.cfg['cdp'], doc=item)
 		except Exception as e:
-			print str(e)
+			log.error('error: {0}'.format(str(e)))
 
 
 	def check_for_vrf(self):

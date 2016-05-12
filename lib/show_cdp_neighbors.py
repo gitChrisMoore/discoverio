@@ -28,7 +28,7 @@ class ShowCDPNeghbors(cmd_director.Builder):
 		neighbor_remote_port = re.findall(r"Port ID \(outgoing port\): (.+)(\n|,)", self.container.filtered_output)
 
 		for value in range(0, len(neighbor_id)):
-			tmp_dict = {"neighbor_ip": neighbor_ip[value][0].strip(),
+			tmp_dict = {"ip_address": neighbor_ip[value][0].strip(),
 			"neighbor_platform": neighbor_platform[value][0].strip(),
 			"neighbor_capabilities": neighbor_capabilities[value][0].strip(),
 			"neighbor_local_port": neighbor_local_port[value][0].strip(),
