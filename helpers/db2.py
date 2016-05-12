@@ -73,10 +73,8 @@ class DB(object):
 			next_doc = self._todo_single_find()
 			self._todo_single_remove(next_doc)
 			if self._todo_search_complete(next_doc) > 0:
-				print 'todo_get_doc - False'
 				self.unique_todo = False
 			else:
-				print 'todo_get_doc - True'
 				self.unique_todo = True
 		return next_doc
 

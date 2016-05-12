@@ -59,7 +59,6 @@ class BuildContainers(object):
 				self._add_loop_of_lists()
 				self._add_list_to_todo()
 				self._add_list_to_complete()
-
 				# standard start config: start
 				self.abs_end(method_name='main')
 				# standard start config: end
@@ -99,6 +98,7 @@ class BuildContainers(object):
 		#
 		self.list_todo = self.list_todo + self._list_tp_ip(self.ip_discovered_list)
 		self.list_todo = self.list_todo + self._dict_to_ip_list(self.cdp_info)
+		self.list_todo = self.list_todo + self._dict_to_ip_list(self.bgp_info)
 
 		self.list_complete = list(set(self.list_complete))
 		self.list_todo = list(set(self.list_todo))
@@ -107,13 +107,16 @@ class BuildContainers(object):
 
 		for item in self.list_todo:
 			document = self._build_todo_obj(item)
-			print self.db2._todo_insert_todo(document)
+			result = self.db2._todo_insert_todo(document)
+			log.info('_add_list_to_todo:added: {0}'.format(result))
+
 
 	def _add_list_to_complete(self):
 
 		for item in self.list_complete:
 			document = self._build_todo_obj(item)
-			print self.db2._todo_insert_complete(document)
+			result = self.db2._todo_insert_complete(document)
+			log.info('_add_list_to_todo:added: {0}'.format(result))
 
 
 	def add_inventory(self):
