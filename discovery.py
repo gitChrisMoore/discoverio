@@ -2,7 +2,6 @@ import logging
 import sys
 import helpers.load_config
 import helpers.ssh_child
-import helpers.db
 import helpers.db2
 import os
 import time
@@ -22,9 +21,6 @@ class BuildContainers(object):
 	def __init__(self):
 		self.config = helpers.load_config.load_config(self)
 		self.cfg = helpers.cmn_tool.Config._load_config()
-		# Create the DB object
-		#self.db = helpers.db.DBWrapper()
-		#self.db.start_conn()
 		self.db2 = helpers.db2.DB()
 		self.director = lib.cmd_director.Director()
 		self.stats = {}
@@ -56,6 +52,8 @@ class BuildContainers(object):
 					self.loop_show_ip_route(vrf_name=vrf)
 
 				self.main_loop()
+
+				print self.arp_info
 
 				self._add_list_to_cdp()
 				self._add_loop_of_lists()
@@ -137,28 +135,6 @@ class BuildContainers(object):
 		result = self.db2.add_document(col=self.cfg['inventory'], doc=self.new_inventory)
 		log.info('_add_list_to_cdp:added: {0}'.format(result))
 
-	def add_inventory(self):
-		# standard start config: start
-		method_name = 'add_inventory'
-		self.abs_start(method_name = method_name)
-		# standard start config: end
-		try:
-			# Set the new inventory object
-			self.new_inventory = {"host_ip": self.new_device['ip_address'],
-				"inventory": self.inventory,
-				}
-
-			# Insert the document into the database
-			self.db.insert_single_document(
-				collection_name=
-					self.db.cfg['inventory'],
-				document = self.new_inventory)
-			# Log the successfuly output
-			log.debug('{0}:added document: {1}'.format(
-				method_name, self.new_inventory))
-		except Exception as e:
-			log.error('{0}:exception:'.format(method_name))
-			log.error('{0}:error: {1}'.format(method_name, str(e)))
 
 	def check_for_vrf(self):
 		# standard start config: start
@@ -219,7 +195,8 @@ class BuildContainers(object):
 			except Exception as e:
 				log.error('{0}:exception:'.format(method['description']))
 				log.error('{0}:error: {1}'.format(method['description'], str(e)))
-				raise
+				doc = {"ip_address": self.new_device['ip_address'], "error": str(e)}
+				self.db2.add_document(col=self.cfg['remediation'], doc=doc)
 				# standard start config: start
 				self.abs_end(method_name= method['description'])
 				# standard start config: end
