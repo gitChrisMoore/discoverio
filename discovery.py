@@ -37,8 +37,7 @@ class BuildContainers(object):
 		# standard start config: end
 		while self.db2.todo_count() > 0:
 			self.new_device = self.db2.todo_get_doc()
-
-			
+			log.info('starting with new device: {0}'.format(self.new_device))
 
 			self.get_function_list()
 
@@ -52,26 +51,24 @@ class BuildContainers(object):
 					self.loop_show_ip_route(vrf_name=vrf)
 
 				self.main_loop()
-
-				print self.arp_info
-
+				self._add_arp()
 				self._add_list_to_cdp()
 				self._add_loop_of_lists()
 				self._add_list_to_todo()
 				self._add_list_to_complete()
+
 				# standard start config: start
 				self.abs_end(method_name='main')
 				# standard start config: end
 				self._add_inventory()
 			except Exception as e:
-				print str(e)
 				log.error('error: {0}'.format(str(e)))
 
 	def _build_todo_obj(self, ip):
 		return {'ip_address': ip}
 
 	def _dict_to_ip_list(self, device_list):
-		print '_add_ip_list'
+		log.debug('starting: _dict_to_ip_list')
 		tmp_list = []
 		for ele in device_list:
 			if isinstance(ele,dict):
@@ -81,7 +78,7 @@ class BuildContainers(object):
 		return tmp_list
 
 	def _list_tp_ip(self, device_list):
-		print '_list_tp_ip'
+		log.debug('starting: _list_tp_ip')
 		tmp_list = []
 		for ele in device_list:
 			if helpers.cmn_tool.IP._ip_single(ele):
@@ -90,8 +87,8 @@ class BuildContainers(object):
 
 
 	def _add_loop_of_lists(self):
-		print '_add_loop_of_lists'
-		
+		log.debug('starting: _add_loop_of_lists')
+
 		self.list_complete = []
 		self.list_todo = []
 
@@ -105,35 +102,39 @@ class BuildContainers(object):
 		self.list_todo = list(set(self.list_todo))
 
 	def _add_list_to_todo(self):
-		print '_add_list_to_todo'
+		log.debug('starting: _add_list_to_todo')
 		for item in self.list_todo:
 			document = self._build_todo_obj(item)
-			result = self.db2._todo_insert_todo(document)
-			log.info('_add_list_to_todo:added: {0}'.format(result))
+			self.db2._todo_insert_todo(document)
 
 
 	def _add_list_to_complete(self):
-		print '_add_list_to_complete'
+		log.debug('starting: _add_list_to_complete')
 		for item in self.list_complete:
 			document = self._build_todo_obj(item)
-			result = self.db2._todo_insert_complete(document)
-			log.info('_add_list_to_todo:added: {0}'.format(result))
+			self.db2._todo_insert_complete(document)
 
 	def _add_list_to_cdp(self):
-		print '_add_list_to_cdp'
+		log.debug('starting: _add_list_to_cdp')
 		try: 
 			for item in self.cdp_info:
-				result = self.db2.add_document(col=self.cfg['cdp'], doc=item)
-				log.info('_add_list_to_cdp:added: {0}'.format(result))
+				self.db2.add_document(col=self.cfg['cdp'], doc=item)
 		except Exception as e:
 			print str(e)
 
 	def _add_inventory(self):
-		print '_add_inventory'
+		log.debug('starting: _add_inventory')
 		self.new_inventory = {"host_ip": self.new_device['ip_address'],
 			"inventory": self.inventory}
-		result = self.db2.add_document(col=self.cfg['inventory'], doc=self.new_inventory)
-		log.info('_add_list_to_cdp:added: {0}'.format(result))
+		self.db2.add_document(col=self.cfg['inventory'], doc=self.new_inventory)
+
+	def _add_arp(self):
+		log.debug('starting: _add_arp')
+		try:
+			for item in self.arp_info:
+				self.db2.upsert(col=self.cfg['cdp'], doc=item)
+		except Exception as e:
+			print str(e)
 
 
 	def check_for_vrf(self):
@@ -215,6 +216,7 @@ class BuildContainers(object):
 			log.info('{0}:add doc: {1}'.format(method_name, result))
 			self.ssh_session = helpers.ssh_child.SSHChild(
 				host=self.new_device['ip_address'],
+				#host='172.22.0.10',
 				un=self.config['default_info']['un'],
 				pw=self.config['default_info']['pw'],
 				port=self.config['default_info']['port'])

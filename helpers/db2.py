@@ -34,6 +34,14 @@ class DB(object):
 	def count(self, col):
 		return self.db[col].count()
 
+	def upsert(self, col, doc):
+		try:
+			key = {'neighbor_ip':doc['ip_address']}
+			data = {'mac_address':doc['mac_address']};
+			print self.db[col].update(key, data, {upsert:true})
+		except Exception as e:
+			return str(e)
+
 	def add_document(self, col, doc):
 		try:
 			return self.db[col].insert(doc)

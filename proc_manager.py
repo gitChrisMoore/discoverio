@@ -7,21 +7,24 @@ import time, os, signal
 class Command(object):
     help = 'Run all commands'
     commands = [
-        'python discovery.py',
-        'python discovery.py',
-        'python discovery.py',
-        'python discovery.py',
-        'python discovery.py',
-        'python discovery.py',
-        'python discovery.py',
-        'python discovery.py',
-        'python discovery.py',
-        'python discovery.py',
-        'python discovery.py',
-        'python discovery.py',
-        'python discovery.py',
-        'python discovery.py',
-        'python discovery.py',
+        'python2.7 discovery.py',
+        'python2.7 discovery.py',
+        'python2.7 discovery.py',
+        'python2.7 discovery.py',
+        'python2.7 discovery.py',
+        'python2.7 discovery.py',
+        'python2.7 discovery.py',
+        'python2.7 discovery.py',
+        'python2.7 discovery.py',
+        'python2.7 discovery.py',
+        'python2.7 discovery.py',
+        'python2.7 discovery.py',
+        'python2.7 discovery.py',
+        'python2.7 discovery.py',
+        'python2.7 discovery.py',
+        'python2.7 discovery.py',
+        'python2.7 discovery.py',
+
     ]
 
     def main(self, *args, **options):
