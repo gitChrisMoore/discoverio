@@ -41,6 +41,13 @@ class DB(object):
 		except Exception as e:
 			print str(e)
 
+	def upsert_dns(self, col, doc):
+		try:
+			self.db[col].update_one({'ip_address':doc['ip_address']},
+			 {'$set':{'dns_name':doc['dns_name']}}, upsert=True)
+		except Exception as e:
+			print str(e)
+
 	def upsert_cdp(self, col, doc):
 		try:
 			data = {'neighbor_platform':doc['neighbor_platform'],
