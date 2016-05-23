@@ -2,3 +2,4 @@
 *.json
 .DS_Store
 *.txt
+.idea*
