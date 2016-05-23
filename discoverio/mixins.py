@@ -45,7 +45,7 @@ def build_ip_dict(ip):
 
     def _build_ip_dict(inner_ip):
         if valid_ip(inner_ip):
-            return {"ip address": inner_ip}
+            return {"ip_address": inner_ip}
 
     if type(inner_ip) is dict:
         if 'entry_ip_address' in inner_ip:
