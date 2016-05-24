@@ -50,8 +50,7 @@ def update_collections(d_complete, current_ip):
              for x in mixins.make_cdp_list(d_complete)]
 
             inventory_doc = {"ip_address": current_ip, "inventory": mixins.make_inventory_list(d_complete)}
-            print inventory_doc
-            print upsert_doc(inventory_doc, current_ip, 'discovery_inventory')
+            upsert_doc(inventory_doc, current_ip, 'discovery_inventory')
 
         except Exception as e:
             print str(e)
