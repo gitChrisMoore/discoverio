@@ -430,6 +430,7 @@ class TestRegexInv(unittest.TestCase):
                 i = item
         split_result = regex_split(test_inv, i['regex_split'])
         result = loop_through_output(split_result, i['method_list'])
+        print result
         self.assertTrue(len(result) == 3)
 
 

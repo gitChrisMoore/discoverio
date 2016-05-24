@@ -15,9 +15,10 @@ def main():
         try:
             next_device = db.NextAvailDoc().main(d)
             s = ssh.Session(next_device['ip_address'], cfg['un'], cfg['pw'])
+            current_ip = next_device['ip_address']
             m = mapping.mapping()
             d_complete = discovery_loop(s, m)
-            update_collections(d_complete)
+            update_collections(d_complete, current_ip)
         except Exception as e:
             print upsert_doc(next_device, next_device['ip_address'], 'discovery_completed')
 
@@ -35,7 +36,7 @@ def discovery_loop(s, m):
     return _discovery_loop()
 
 
-def update_collections(d_complete):
+def update_collections(d_complete, current_ip):
 
     def _update_collections():
         try:
@@ -48,14 +49,22 @@ def update_collections(d_complete):
             [upsert_doc(x, x.values()[0], 'discovery_cdp')
              for x in mixins.make_cdp_list(d_complete)]
 
-            [upsert_doc(x, x.values()[0], 'discovery_inventory')
-             for x in mixins.make_inventory_list(d_complete)]
+            inventory_doc = {"ip_address": current_ip, "inventory": mixins.make_inventory_list(d_complete)}
+            print inventory_doc
+            print upsert_doc(inventory_doc, current_ip, 'discovery_inventory')
 
         except Exception as e:
             print str(e)
 
     return _update_collections()
 
+
+def build_inventory():
+
+    def _build_inventory():
+        return
+
+    return _build_inventory()
 
 def upsert_doc(doc, ip, col):
     try:

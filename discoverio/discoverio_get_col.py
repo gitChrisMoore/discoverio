@@ -8,7 +8,7 @@ d = db.DBClient(cfg['db_ip'], cfg['db_name']).main()
 
 def main():
 
-    result = d.discovery_completed.find()
+    result = d.discovery_inventory.find()
     for i in result:
         print i
 
