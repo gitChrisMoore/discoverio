@@ -7,24 +7,16 @@ import time, os, signal
 class Command(object):
     help = 'Run all commands'
     commands = [
-        'python2.7 discovery.py',
-        'python2.7 discovery.py',
-        'python2.7 discovery.py',
-        'python2.7 discovery.py',
-        'python2.7 discovery.py',
-        'python2.7 discovery.py',
-        'python2.7 discovery.py',
-        'python2.7 discovery.py',
-        'python2.7 discovery.py',
-        'python2.7 discovery.py',
-        'python2.7 discovery.py',
-        'python2.7 discovery.py',
-        'python2.7 discovery.py',
-        'python2.7 discovery.py',
-        'python2.7 discovery.py',
-        'python2.7 discovery.py',
-        'python2.7 discovery.py',
-
+        'python discoverio/discoverio.py',
+        'python discoverio/discoverio.py',
+        'python discoverio/discoverio.py', 'python discoverio/discoverio.py',
+        "python discoverio/discoverio.py", 'python discoverio/discoverio.py',
+        'python discoverio/discoverio.py', 'python discoverio/discoverio.py',
+        'python discoverio/discoverio.py', 'python discoverio/discoverio.py',
+        'python discoverio/discoverio.py', 'python discoverio/discoverio.py',
+        'python discoverio/discoverio.py', 'python discoverio/discoverio.py',
+        "python discoverio/discoverio.py", 'python discoverio/discoverio.py',
+        'python discoverio/discoverio.py'
     ]
 
     def main(self, *args, **options):
@@ -34,7 +26,6 @@ class Command(object):
             print "$ " + command
             proc = Popen(command, shell=True, stdin=stdin, stdout=stdout, stderr=stderr)
             proc_list.append(proc)
-            time.sleep(2)
 
         try:
             while True:

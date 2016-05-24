@@ -45,7 +45,7 @@ class NextAvailDoc(object):
         self.unique = False
         self.doc = {}
 
-    def main(self, session, col_a='discovery_todo', col_b='discovery_complete'):
+    def main(self, session, col_a='discovery_todo', col_b='discovery_completed'):
         self.col_a = col_a
         self.col_b = col_b
         self.session = session
