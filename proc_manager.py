@@ -26,6 +26,7 @@ class Command(object):
             print "$ " + command
             proc = Popen(command, shell=True, stdin=stdin, stdout=stdout, stderr=stderr)
             proc_list.append(proc)
+            time.sleep(3)
 
         try:
             while True:
