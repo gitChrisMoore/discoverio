@@ -15,13 +15,13 @@ def main():
         try:
             next_device = db.NextAvailDoc().main(d)
             s = ssh.Session(next_device['ip_address'], cfg['un'], cfg['pw'])
+            upsert_doc(next_device, next_device['ip_address'], 'discovery_completed')
             current_ip = next_device['ip_address']
             m = mapping.mapping()
             d_complete = discovery_loop(s, m)
             update_collections(d_complete, current_ip)
         except Exception as e:
             print upsert_doc(next_device, next_device['ip_address'], 'discovery_completed')
-
 
 def discovery_loop(s, m):
 
