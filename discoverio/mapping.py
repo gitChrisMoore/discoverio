@@ -76,7 +76,7 @@ def mapping():
                 ]
             },
             {
-                "regex_split": "\n\n",
+                "regex_split": "\n",
                 "runtime_command": "show vrf detail\n",
                 "name": "vrf",
                 "method_list": [

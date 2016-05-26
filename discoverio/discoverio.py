@@ -19,6 +19,8 @@ def main():
             current_ip = next_device['ip_address']
             m = mapping.mapping()
             d_complete = discovery_loop(s, m)
+            if 'vrf' in d_complete:
+                print 'vrf found'
             update_collections(d_complete, current_ip)
         except Exception as e:
             print upsert_doc(next_device, next_device['ip_address'], 'discovery_completed')
@@ -29,8 +31,14 @@ def discovery_loop(s, m):
         d = {}
         for i in m:
             cmd_result = s.cmd(i['runtime_command'])
+            if i['runtime_command'] == "show vrf detail\n":
+                print cmd_result
             split_result = workflows.regex_split(cmd_result, i['regex_split'])
+            if i['runtime_command'] == "show vrf detail\n":
+                print split_result
             d[i['name']] = workflows.loop_through_output(split_result, i['method_list'])
+        if 'vrf' in d:
+            print d['vrf']
         return d
 
     return _discovery_loop()
